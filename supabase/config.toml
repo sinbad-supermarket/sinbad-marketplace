@@ -1,0 +1,36 @@
+project_id = "sinbad-core"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+# verify_jwt is intentionally false for v0.1. Endpoint protection is provided
+# instead by a SHARED SECRET HEADER (X-Sinbad-Core-Secret, checked in the
+# function against SINBAD_CORE_SECRET). JWT is intentionally not used in v0.1.
+# Operational requirement: SINBAD_CORE_SECRET must be set to a long random
+# value in every deployed environment, and the secret transported over HTTPS.
+[functions.observe-identity]
+verify_jwt = false
+
+# Shopify webhook receiver. verify_jwt must be false because Shopify cannot
+# send a Supabase JWT; authenticity is verified instead via the Shopify HMAC
+# (X-Shopify-Hmac-Sha256) against SHOPIFY_WEBHOOK_SECRET inside the function.
+[functions.shopify-customer-webhook]
+verify_jwt = false
+
+# Shopify OAuth redirects cannot include a Supabase JWT. The callback verifies
+# Shopify HMAC, one-time state, and shop allowlist before exchanging the code.
+[functions.shopify-connect-callback]
+verify_jwt = false

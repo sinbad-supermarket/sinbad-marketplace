@@ -1,0 +1,17 @@
+{
+  "name": "sinbad-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sinbad Core v0.1 — Passive Identity Minter",
+  "scripts": {
+    "start": "supabase start",
+    "stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:push": "supabase db push",
+    "functions:serve": "supabase functions serve observe-identity",
+    "functions:deploy": "supabase functions deploy observe-identity"
+  },
+  "devDependencies": {
+    "supabase": "1.200.3"
+  }
+}

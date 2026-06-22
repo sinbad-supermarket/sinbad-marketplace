@@ -1,0 +1,34 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!apps/**/.env.example
+
+# Dependencies
+node_modules/
+apps/**/node_modules/
+
+# Framework/build output
+.next/
+apps/**/.next/
+build/
+apps/**/build/
+dist/
+apps/**/dist/
+coverage/
+apps/**/coverage/
+
+# Supabase local state/secrets
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+supabase/.env.*
+supabase/.secrets
+supabase/.secrets.*
+
+# Local production/backups
+production-*.sql
+*-backup*.sql
+
+# OS/editor noise
+.DS_Store
