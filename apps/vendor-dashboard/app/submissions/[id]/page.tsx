@@ -12,6 +12,7 @@ type SubmissionStatus =
   | "draft"
   | "submitted"
   | "under_review"
+  | "changes_requested"
   | "approved"
   | "rejected"
   | "published"
@@ -30,7 +31,9 @@ type ProductSubmission = {
   shopify_category_id: string | null;
   suggested_category: string | null;
   status: SubmissionStatus;
+  review_status: SubmissionStatus | null;
   review_notes: string | null;
+  review_reason: string | null;
   reviewed_at: string | null;
   created_at: string;
   updated_at: string;
@@ -56,6 +59,7 @@ const statusLabels: Record<SubmissionStatus, string> = {
   draft: "Draft",
   submitted: "Submitted",
   under_review: "Under review",
+  changes_requested: "Changes requested",
   approved: "Approved",
   rejected: "Rejected",
   published: "Published",
@@ -66,6 +70,7 @@ const statusClasses: Record<SubmissionStatus, string> = {
   draft: "bg-slate-100 text-slate-700 ring-slate-200",
   submitted: "bg-sky-50 text-sky-700 ring-sky-200",
   under_review: "bg-amber-50 text-amber-800 ring-amber-200",
+  changes_requested: "bg-orange-50 text-orange-800 ring-orange-200",
   approved: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   rejected: "bg-rose-50 text-rose-700 ring-rose-200",
   published: "bg-indigo-50 text-indigo-700 ring-indigo-200",
@@ -255,7 +260,10 @@ function SubmissionDetail({ submissionId, vendor }: { submissionId: string; vend
     );
   }
 
-  const canSubmit = submission.status === "draft" || submission.status === "rejected";
+  const canSubmit =
+    submission.status === "draft" ||
+    submission.status === "rejected" ||
+    submission.status === "changes_requested";
   const imageUrls =
     uploadedImagePreviews.length > 0
       ? uploadedImagePreviews.map((image) => image.url).filter(Boolean)
@@ -308,6 +316,18 @@ function SubmissionDetail({ submissionId, vendor }: { submissionId: string; vend
       {error ? (
         <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
           {error}
+        </div>
+      ) : null}
+
+      {submission.status === "changes_requested" && submission.review_notes ? (
+        <div className="rounded-md border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-medium text-orange-900">
+          Changes requested: {submission.review_notes}
+        </div>
+      ) : null}
+
+      {submission.status === "rejected" && submission.review_reason ? (
+        <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900">
+          Rejection reason: {submission.review_reason}
         </div>
       ) : null}
 
@@ -369,7 +389,13 @@ function SubmissionDetail({ submissionId, vendor }: { submissionId: string; vend
       <Section title="Review">
         <dl className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <DetailField label="Status" value={statusLabels[submission.status]} />
+          <DetailField
+            label="Review status"
+            value={submission.review_status ? statusLabels[submission.review_status] : null}
+          />
           <DetailField label="Review notes" value={submission.review_notes} />
+          <DetailField label="Requested changes" value={submission.review_notes} />
+          <DetailField label="Rejection reason" value={submission.review_reason} />
           <DetailField label="Reviewed date" value={formatDate(submission.reviewed_at)} />
           <DetailField label="Updated date" value={formatDate(submission.updated_at)} />
         </dl>

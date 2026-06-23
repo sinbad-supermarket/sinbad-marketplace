@@ -12,6 +12,7 @@ type SubmissionStatus =
   | "draft"
   | "submitted"
   | "under_review"
+  | "changes_requested"
   | "approved"
   | "rejected"
   | "published"
@@ -33,6 +34,7 @@ const filters: Array<{ label: string; value: "all" | SubmissionStatus }> = [
   { label: "Draft", value: "draft" },
   { label: "Submitted", value: "submitted" },
   { label: "Under review", value: "under_review" },
+  { label: "Changes requested", value: "changes_requested" },
   { label: "Approved", value: "approved" },
   { label: "Rejected", value: "rejected" },
   { label: "Published", value: "published" },
@@ -43,6 +45,7 @@ const statusLabels: Record<SubmissionStatus, string> = {
   draft: "Draft",
   submitted: "Submitted",
   under_review: "Under review",
+  changes_requested: "Changes requested",
   approved: "Approved",
   rejected: "Rejected",
   published: "Published",
@@ -53,6 +56,7 @@ const statusClasses: Record<SubmissionStatus, string> = {
   draft: "bg-slate-100 text-slate-700 ring-slate-200",
   submitted: "bg-sky-50 text-sky-700 ring-sky-200",
   under_review: "bg-amber-50 text-amber-800 ring-amber-200",
+  changes_requested: "bg-orange-50 text-orange-800 ring-orange-200",
   approved: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   rejected: "bg-rose-50 text-rose-700 ring-rose-200",
   published: "bg-indigo-50 text-indigo-700 ring-indigo-200",

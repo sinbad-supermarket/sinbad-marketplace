@@ -11,6 +11,7 @@ type SubmissionStatus =
   | "draft"
   | "submitted"
   | "under_review"
+  | "changes_requested"
   | "approved"
   | "rejected"
   | "published"
@@ -29,7 +30,9 @@ type ProductSubmission = {
   shopify_category_id: string | null;
   suggested_category: string | null;
   status: SubmissionStatus;
+  review_status: SubmissionStatus | null;
   review_notes: string | null;
+  review_reason: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
   submitted_by: string | null;
@@ -100,6 +103,7 @@ const statusLabels: Record<SubmissionStatus, string> = {
   draft: "Draft",
   submitted: "Submitted",
   under_review: "Under review",
+  changes_requested: "Changes requested",
   approved: "Approved internally - not yet published to Shopify",
   rejected: "Rejected",
   published: "Published",
@@ -110,6 +114,7 @@ const statusClasses: Record<SubmissionStatus, string> = {
   draft: "bg-slate-100 text-slate-700 ring-slate-200",
   submitted: "bg-sky-50 text-sky-700 ring-sky-200",
   under_review: "bg-amber-50 text-amber-800 ring-amber-200",
+  changes_requested: "bg-orange-50 text-orange-800 ring-orange-200",
   approved: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   rejected: "bg-rose-50 text-rose-700 ring-rose-200",
   published: "bg-indigo-50 text-indigo-700 ring-indigo-200",
@@ -183,6 +188,8 @@ function ProductSubmissionDetail({
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [requestChangesNote, setRequestChangesNote] = useState("");
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const loadSubmission = useCallback(async () => {
     setLoading(true);
@@ -291,7 +298,10 @@ function ProductSubmissionDetail({
 
   async function runAction(
     label: string,
-    rpcName: "approve_product_submission" | "reject_product_submission",
+    rpcName:
+      | "approve_product_submission"
+      | "reject_product_submission"
+      | "request_changes_product_submission",
     args: Record<string, string>
   ) {
     setActionLoading(label);
@@ -304,6 +314,8 @@ function ProductSubmissionDetail({
       setError(rpcError.message);
     } else {
       setActionMessage(`${label} completed.`);
+      if (rpcName === "reject_product_submission") setRejectionReason("");
+      if (rpcName === "request_changes_product_submission") setRequestChangesNote("");
       await loadSubmission();
     }
 
@@ -322,15 +334,34 @@ function ProductSubmissionDetail({
   }
 
   function handleReject() {
-    const notes = window.prompt("Enter rejection notes:");
-    if (!notes || notes.trim().length === 0) return;
+    const reason = rejectionReason.trim();
+    if (!reason) {
+      setError("Rejection reason is required.");
+      return;
+    }
 
     const confirmed = window.confirm("Reject this product submission?");
     if (!confirmed) return;
 
     void runAction("Reject", "reject_product_submission", {
       p_submission_id: submissionId,
-      p_review_notes: notes.trim()
+      p_review_notes: reason
+    });
+  }
+
+  function handleRequestChanges() {
+    const note = requestChangesNote.trim();
+    if (!note) {
+      setError("Review note is required to request changes.");
+      return;
+    }
+
+    const confirmed = window.confirm("Request changes for this product submission?");
+    if (!confirmed) return;
+
+    void runAction("Request changes", "request_changes_product_submission", {
+      p_submission_id: submissionId,
+      p_review_notes: note
     });
   }
 
@@ -481,24 +512,6 @@ function ProductSubmissionDetail({
           </p>
         </div>
 
-        {canReview ? (
-          <div className="flex flex-wrap gap-2">
-            <button
-              className="h-9 rounded-md bg-emerald-700 px-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
-              disabled={Boolean(actionLoading)}
-              onClick={handleApprove}
-            >
-              Approve
-            </button>
-            <button
-              className="h-9 rounded-md bg-rose-700 px-3 text-sm font-semibold text-white hover:bg-rose-800 disabled:opacity-60"
-              disabled={Boolean(actionLoading)}
-              onClick={handleReject}
-            >
-              Reject
-            </button>
-          </div>
-        ) : null}
         {!canReview && canDryRunPublish ? (
           <div className="flex flex-wrap gap-2">
             <button
@@ -562,6 +575,66 @@ function ProductSubmissionDetail({
           Publishing status needs manual review. Check Shopify Admin before retrying to avoid
           duplicate products.
         </div>
+      ) : null}
+
+      {canReview ? (
+        <Section title="Moderation">
+          <div className="mt-4 grid gap-4 xl:grid-cols-3">
+            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4">
+              <h3 className="text-sm font-semibold text-emerald-900">Approve</h3>
+              <p className="mt-1 text-sm leading-6 text-emerald-800">
+                Approves this product internally. This does not publish it to Shopify.
+              </p>
+              <button
+                className="mt-4 h-9 rounded-md bg-emerald-700 px-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+                disabled={Boolean(actionLoading)}
+                onClick={handleApprove}
+              >
+                Approve
+              </button>
+            </div>
+
+            <div className="rounded-md border border-orange-200 bg-orange-50 p-4">
+              <h3 className="text-sm font-semibold text-orange-900">Request Changes</h3>
+              <p className="mt-1 text-sm leading-6 text-orange-800">
+                Send clear requested changes back to the vendor.
+              </p>
+              <textarea
+                className="mt-3 min-h-24 w-full rounded-md border border-orange-200 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-orange-500"
+                placeholder="Describe what the vendor needs to change."
+                value={requestChangesNote}
+                onChange={(event) => setRequestChangesNote(event.target.value)}
+              />
+              <button
+                className="mt-3 h-9 rounded-md bg-orange-600 px-3 text-sm font-semibold text-white hover:bg-orange-700 disabled:opacity-60"
+                disabled={Boolean(actionLoading)}
+                onClick={handleRequestChanges}
+              >
+                Request Changes
+              </button>
+            </div>
+
+            <div className="rounded-md border border-rose-200 bg-rose-50 p-4">
+              <h3 className="text-sm font-semibold text-rose-900">Reject</h3>
+              <p className="mt-1 text-sm leading-6 text-rose-800">
+                Reject this submission with a required rejection reason.
+              </p>
+              <textarea
+                className="mt-3 min-h-24 w-full rounded-md border border-rose-200 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-rose-500"
+                placeholder="Enter the rejection reason."
+                value={rejectionReason}
+                onChange={(event) => setRejectionReason(event.target.value)}
+              />
+              <button
+                className="mt-3 h-9 rounded-md bg-rose-700 px-3 text-sm font-semibold text-white hover:bg-rose-800 disabled:opacity-60"
+                disabled={Boolean(actionLoading)}
+                onClick={handleReject}
+              >
+                Reject
+              </button>
+            </div>
+          </div>
+        </Section>
       ) : null}
 
       <Section title="Product">
@@ -722,7 +795,12 @@ function ProductSubmissionDetail({
       <Section title="Review">
         <dl className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <DetailField label="Status" value={statusLabels[submission.status]} />
+          <DetailField
+            label="Review status"
+            value={submission.review_status ? statusLabels[submission.review_status] : null}
+          />
           <DetailField label="Review notes" value={submission.review_notes} />
+          <DetailField label="Rejection reason" value={submission.review_reason} />
           <DetailField label="Reviewed by" value={submission.reviewed_by} />
           <DetailField label="Reviewed date" value={formatDate(submission.reviewed_at)} />
           <DetailField label="Submitted by" value={submission.submitted_by} />
