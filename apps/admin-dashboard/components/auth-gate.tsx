@@ -13,6 +13,11 @@ type AdminProfile = {
   active: boolean;
 };
 
+type AdminLookupResult = {
+  data: AdminProfile | null;
+  error: { message: string } | null;
+};
+
 type AuthGateProps = {
   children: (state: { user: User; admin: AdminProfile }) => React.ReactNode;
 };
@@ -24,7 +29,7 @@ type GateState =
   | { status: "error"; message: string }
   | { status: "ready"; user: User; admin: AdminProfile };
 
-async function withTimeout<T>(promise: Promise<T>, message: string, timeoutMs = 10_000) {
+async function withTimeout<T>(promise: PromiseLike<T>, message: string, timeoutMs = 10_000) {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
   const timeout = new Promise<never>((_, reject) => {
@@ -60,7 +65,7 @@ export function AuthGate({ children }: AuthGateProps) {
           return;
         }
 
-        const { data, error } = await withTimeout(
+        const { data, error } = (await withTimeout(
           supabase
             .from("admin_users")
             .select("id,user_id,role,active")
@@ -68,7 +73,7 @@ export function AuthGate({ children }: AuthGateProps) {
             .eq("active", true)
             .maybeSingle(),
           "Sinbad admin role lookup timed out."
-        );
+        )) as AdminLookupResult;
 
         if (!mounted) return;
 
