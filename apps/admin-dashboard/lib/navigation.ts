@@ -18,7 +18,7 @@ export const sidebarItems = [
   { label: "Vendor Applications", href: "/applications", icon: FileCheck2 },
   { label: "Vendors", href: "/vendors", icon: Store },
   { label: "Product Submissions", href: "/product-submissions", icon: ClipboardList },
-  { label: "Products", href: "/dashboard/products", icon: ShoppingBag },
+  { label: "Products", href: "/products", icon: ShoppingBag },
   { label: "Orders", href: "/dashboard/orders", icon: Truck },
   { label: "Commissions", href: "/commissions", icon: BadgeDollarSign },
   { label: "Vendor Live", href: "/vendor-live", icon: Radio },
