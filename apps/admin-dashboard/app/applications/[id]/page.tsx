@@ -113,6 +113,34 @@ function fieldValue(value: string | number | boolean | null) {
   return String(value);
 }
 
+async function formatFunctionError(error: unknown) {
+  const message = error instanceof Error ? error.message : "Edge Function request failed.";
+  const context = error && typeof error === "object" && "context" in error ? error.context : null;
+  const response = context instanceof Response ? context : null;
+
+  if (!response) return message;
+
+  try {
+    const payload = await response.clone().json();
+    const code = typeof payload?.error === "string" ? payload.error : null;
+    const details =
+      typeof payload?.details === "string"
+        ? payload.details
+        : payload?.details
+          ? JSON.stringify(payload.details)
+          : null;
+
+    return [code, details].filter(Boolean).join(": ") || message;
+  } catch {
+    try {
+      const text = await response.clone().text();
+      return text || message;
+    } catch {
+      return message;
+    }
+  }
+}
+
 function DetailField({
   label,
   value
@@ -354,7 +382,7 @@ function ApplicationDetail({
     });
 
     if (functionError) {
-      setError(functionError.message);
+      setError(await formatFunctionError(functionError));
     } else {
       setActionMessage("Vendor owner invite completed.");
       await loadApplication();

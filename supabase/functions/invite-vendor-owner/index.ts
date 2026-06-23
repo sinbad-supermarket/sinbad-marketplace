@@ -5,6 +5,12 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const INVITE_VENDOR_OWNER_ENABLED = Deno.env.get("INVITE_VENDOR_OWNER_ENABLED");
 const VENDOR_INVITE_REDIRECT_URL = Deno.env.get("VENDOR_INVITE_REDIRECT_URL");
 
+const CORS_HEADERS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
+  "access-control-allow-methods": "POST, OPTIONS",
+};
+
 type VendorApplication = {
   id: string;
   status: string;
@@ -18,7 +24,7 @@ type VendorApplication = {
 function json(payload: unknown, status: number): Response {
   return new Response(JSON.stringify(payload), {
     status,
-    headers: { "content-type": "application/json" },
+    headers: { ...CORS_HEADERS, "content-type": "application/json" },
   });
 }
 
@@ -38,6 +44,10 @@ function normalizeEmail(value: string | null): string | null {
 }
 
 Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  }
+
   if (req.method !== "POST") {
     return fail(405, "method_not_allowed");
   }
