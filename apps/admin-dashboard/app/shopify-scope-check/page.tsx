@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, PlugZap, ShieldCheck } from "lucide-react";
+import { ExternalLink, PlugZap, RefreshCw, ShieldCheck } from "lucide-react";
 import { AdminShell } from "@/components/admin-shell";
 import { AuthGate } from "@/components/auth-gate";
 import { supabase } from "@/lib/supabase";
@@ -47,6 +47,12 @@ type PreflightResult = {
   tokenSource?: string;
 };
 
+type CollectionSyncResult = {
+  ok?: boolean;
+  synced_count: number;
+  synced_at: string;
+};
+
 type State<T> =
   | { status: "idle" }
   | { status: "loading" }
@@ -59,6 +65,9 @@ export default function ShopifyConnectionPage() {
   });
   const [statusState, setStatusState] = useState<State<ShopifyStatusResult>>({ status: "idle" });
   const [preflightState, setPreflightState] = useState<State<PreflightResult>>({ status: "idle" });
+  const [collectionSyncState, setCollectionSyncState] = useState<State<CollectionSyncResult>>({
+    status: "idle"
+  });
 
   async function startConnection() {
     setConnectState({ status: "loading" });
@@ -118,6 +127,21 @@ export default function ShopifyConnectionPage() {
     setPreflightState({ status: "success", result: data as PreflightResult });
   }
 
+  async function syncCollections() {
+    setCollectionSyncState({ status: "loading" });
+
+    const { data, error } = await supabase.functions.invoke("shopify-sync-collections", {
+      body: {}
+    });
+
+    if (error) {
+      setCollectionSyncState({ status: "error", message: await functionErrorMessage(error) });
+      return;
+    }
+
+    setCollectionSyncState({ status: "success", result: data as CollectionSyncResult });
+  }
+
   return (
     <AuthGate>
       {({ user, admin }) => (
@@ -151,6 +175,42 @@ export default function ShopifyConnectionPage() {
                   </button>
                 </div>
                 <StateMessage state={connectState} />
+              </section>
+
+              <section className="rounded-lg border border-line bg-white p-6 shadow-sm">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-ink">Collection category sync</div>
+                    <div className="mt-1 text-sm text-slate-600">
+                      Reads Shopify collections and stores them as selectable vendor product
+                      categories. No products are created or modified.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void syncCollections()}
+                    disabled={collectionSyncState.status === "loading"}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-white px-4 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                    {collectionSyncState.status === "loading" ? "Syncing..." : "Sync Collections"}
+                  </button>
+                </div>
+
+                {collectionSyncState.status === "error" ? (
+                  <ErrorBox message={collectionSyncState.message} />
+                ) : null}
+
+                {collectionSyncState.status === "success" ? (
+                  <div className="mt-5 grid gap-3 md:grid-cols-2">
+                    <ScopeRow
+                      label="Synced collections"
+                      value={String(collectionSyncState.result.synced_count)}
+                      tone="success"
+                    />
+                    <ScopeRow label="Synced at" value={collectionSyncState.result.synced_at} />
+                  </div>
+                ) : null}
               </section>
 
               <section className="rounded-lg border border-line bg-white p-6 shadow-sm">

@@ -26,11 +26,17 @@ type ProductSubmission = {
   price: number | null;
   sku: string | null;
   inventory_quantity: number | null;
+  shopify_category_id: string | null;
+  suggested_category: string | null;
   status: SubmissionStatus;
   review_notes: string | null;
   reviewed_at: string | null;
   created_at: string;
   updated_at: string;
+  shopify_collection_categories: {
+    name: string;
+    parent_name: string | null;
+  } | null;
 };
 
 type UploadedImagePreview = {
@@ -132,7 +138,7 @@ function SubmissionDetail({ submissionId, vendor }: { submissionId: string; vend
 
     const { data, error: loadError } = await supabase
       .from("vendor_product_submissions")
-      .select("*")
+      .select("*,shopify_collection_categories(name,parent_name)")
       .eq("id", submissionId)
       .eq("vendor_id", vendor.vendorId)
       .maybeSingle();
@@ -310,6 +316,20 @@ function SubmissionDetail({ submissionId, vendor }: { submissionId: string; vend
           <DetailField label="Price" value={formatMoney(submission.price)} />
           <DetailField label="SKU" value={submission.sku} />
           <DetailField label="Inventory" value={submission.inventory_quantity} />
+          <DetailField
+            label="Category"
+            value={
+              submission.shopify_collection_categories
+                ? [
+                    submission.shopify_collection_categories.parent_name,
+                    submission.shopify_collection_categories.name
+                  ]
+                    .filter(Boolean)
+                    .join(" / ")
+                : null
+            }
+          />
+          <DetailField label="Suggested category" value={submission.suggested_category} />
           <DetailField label="Description" value={submission.description} />
         </dl>
       </Section>

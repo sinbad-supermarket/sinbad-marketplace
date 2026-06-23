@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Trash2, Upload } from "lucide-react";
 import { AdminShell } from "@/components/admin-shell";
 import { AuthGate } from "@/components/auth-gate";
+import { CategoryPicker } from "@/components/category-picker";
+import type { ProductCategory } from "@/components/category-picker";
 import { supabase } from "@/lib/supabase";
 
 type Vendor = {
@@ -35,6 +37,10 @@ type FormState = {
   price: string;
   sku: string;
   inventoryQuantity: string;
+  shopifyCategoryId: string;
+  categorySearch: string;
+  suggestedCategory: string;
+  useSuggestedCategory: boolean;
 };
 
 const initialFormState: FormState = {
@@ -43,7 +49,11 @@ const initialFormState: FormState = {
   description: "",
   price: "",
   sku: "",
-  inventoryQuantity: ""
+  inventoryQuantity: "",
+  shopifyCategoryId: "",
+  categorySearch: "",
+  suggestedCategory: "",
+  useSuggestedCategory: false
 };
 
 const maxImages = 6;
@@ -69,6 +79,11 @@ function validateForm(form: FormState, uploadedImages: UploadedImage[]) {
     errors.push("Inventory quantity must be an integer greater than or equal to 0.");
   }
   if (uploadedImages.length === 0) errors.push("At least one product image is required.");
+  if (form.useSuggestedCategory) {
+    if (!form.suggestedCategory.trim()) errors.push("Suggested category is required.");
+  } else if (!form.shopifyCategoryId) {
+    errors.push("Category is required.");
+  }
 
   return errors;
 }
@@ -100,10 +115,12 @@ function validateFiles(files: File[], existingCount: number) {
 
 function NewProductSubmissionContent() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [form, setForm] = useState<FormState>(initialFormState);
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [createdSubmission, setCreatedSubmission] = useState<CreatedSubmission | null>(null);
   const [loadingVendors, setLoadingVendors] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submittingForReview, setSubmittingForReview] = useState(false);
@@ -130,12 +147,42 @@ function NewProductSubmissionContent() {
     setLoadingVendors(false);
   }, []);
 
+  const loadCategories = useCallback(async () => {
+    setLoadingCategories(true);
+    setError(null);
+
+    const { data, error: loadError } = await supabase
+      .from("shopify_collection_categories")
+      .select("category_id,name,parent_name")
+      .eq("status", "active")
+      .order("name", { ascending: true });
+
+    if (loadError) {
+      setError(loadError.message);
+      setCategories([]);
+    } else {
+      setCategories((data ?? []) as ProductCategory[]);
+    }
+
+    setLoadingCategories(false);
+  }, []);
+
   useEffect(() => {
     void loadVendors();
-  }, [loadVendors]);
+    void loadCategories();
+  }, [loadCategories, loadVendors]);
 
   function updateField(field: keyof FormState, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function updateBooleanField(field: keyof Pick<FormState, "useSuggestedCategory">, value: boolean) {
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+      shopifyCategoryId: value ? "" : current.shopifyCategoryId,
+      suggestedCategory: value ? current.suggestedCategory : ""
+    }));
   }
 
   function clearUploadedImages() {
@@ -272,7 +319,9 @@ function NewProductSubmissionContent() {
       p_price: Number(form.price),
       p_sku: form.sku.trim(),
       p_inventory_quantity: Number(form.inventoryQuantity),
-      p_image_ids: uploadedImages.map((image) => image.id)
+      p_image_ids: uploadedImages.map((image) => image.id),
+      p_shopify_category_id: form.useSuggestedCategory ? null : form.shopifyCategoryId,
+      p_suggested_category: form.useSuggestedCategory ? form.suggestedCategory.trim() : null
     });
 
     if (rpcError) {
@@ -441,6 +490,24 @@ function NewProductSubmissionContent() {
                 onChange={(event) => updateField("inventoryQuantity", event.target.value)}
               />
             </label>
+
+            <CategoryPicker
+              categories={categories}
+              loading={loadingCategories}
+              selectedCategoryId={form.shopifyCategoryId}
+              search={form.categorySearch}
+              suggestedCategory={form.suggestedCategory}
+              useSuggestedCategory={form.useSuggestedCategory}
+              onSearchChange={(value) => updateField("categorySearch", value)}
+              onSelectCategory={(categoryId) => {
+                updateField("shopifyCategoryId", categoryId);
+                updateField("suggestedCategory", "");
+              }}
+              onUseSuggestedCategoryChange={(value) =>
+                updateBooleanField("useSuggestedCategory", value)
+              }
+              onSuggestedCategoryChange={(value) => updateField("suggestedCategory", value)}
+            />
 
             <div className="md:col-span-2">
               <div className="text-sm font-semibold text-ink">Product images</div>
