@@ -24,6 +24,7 @@ type ProductSubmission = {
   images: unknown;
   price: number | null;
   sku: string | null;
+  barcode: string | null;
   inventory_quantity: number | null;
   shopify_category_id: string | null;
   suggested_category: string | null;
@@ -568,6 +569,7 @@ function ProductSubmissionDetail({
           <DetailField label="Title" value={submission.title} />
           <DetailField label="Price" value={formatMoney(submission.price)} />
           <DetailField label="SKU" value={submission.sku} />
+          <DetailField label="Barcode (EAN / UPC)" value={submission.barcode} />
           <DetailField label="Inventory" value={submission.inventory_quantity} />
           <DetailField
             label="Category"

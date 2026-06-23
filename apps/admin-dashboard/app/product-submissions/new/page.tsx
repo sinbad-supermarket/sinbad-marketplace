@@ -36,6 +36,7 @@ type FormState = {
   description: string;
   price: string;
   sku: string;
+  barcode: string;
   inventoryQuantity: string;
   shopifyCategoryId: string;
   categorySearch: string;
@@ -49,6 +50,7 @@ const initialFormState: FormState = {
   description: "",
   price: "",
   sku: "",
+  barcode: "",
   inventoryQuantity: "",
   shopifyCategoryId: "",
   categorySearch: "",
@@ -65,11 +67,15 @@ function validateForm(form: FormState, uploadedImages: UploadedImage[]) {
   const errors: string[] = [];
   const price = Number(form.price);
   const inventoryQuantity = Number(form.inventoryQuantity);
+  const barcode = form.barcode.trim();
 
   if (!form.vendorId) errors.push("Vendor is required.");
   if (!form.title.trim()) errors.push("Title is required.");
   if (!form.description.trim()) errors.push("Description is required.");
   if (!form.sku.trim()) errors.push("SKU is required.");
+  if (barcode && !/^(?:\d{8}|\d{12}|\d{13}|\d{14})$/.test(barcode)) {
+    errors.push("Barcode must be 8, 12, 13, or 14 digits.");
+  }
   if (!Number.isFinite(price) || price <= 0) errors.push("Price must be greater than 0.");
   if (
     !Number.isInteger(inventoryQuantity) ||
@@ -174,6 +180,10 @@ function NewProductSubmissionContent() {
 
   function updateField(field: keyof FormState, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function updateBarcode(value: string) {
+    setForm((current) => ({ ...current, barcode: value.replace(/\D/g, "").slice(0, 14) }));
   }
 
   function updateBooleanField(field: keyof Pick<FormState, "useSuggestedCategory">, value: boolean) {
@@ -318,6 +328,7 @@ function NewProductSubmissionContent() {
       p_images: [],
       p_price: Number(form.price),
       p_sku: form.sku.trim(),
+      p_barcode: form.barcode.trim() || null,
       p_inventory_quantity: Number(form.inventoryQuantity),
       p_image_ids: uploadedImages.map((image) => image.id),
       p_shopify_category_id: form.useSuggestedCategory ? null : form.shopifyCategoryId,
@@ -489,6 +500,20 @@ function NewProductSubmissionContent() {
                 value={form.inventoryQuantity}
                 onChange={(event) => updateField("inventoryQuantity", event.target.value)}
               />
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-semibold text-ink">Barcode (EAN / UPC)</span>
+              <input
+                className="mt-2 h-10 w-full rounded-md border border-line px-3 text-sm text-ink outline-none focus:border-ink"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={form.barcode}
+                onChange={(event) => updateBarcode(event.target.value)}
+              />
+              <span className="mt-1 block text-xs text-slate-500">
+                Optional. Use 8, 12, 13, or 14 digits.
+              </span>
             </label>
 
             <CategoryPicker
