@@ -34,6 +34,7 @@ type ProductSubmission = {
   images: unknown;
   price: number | string | null;
   sku: string | null;
+  barcode: string | null;
   inventory_quantity: number | null;
   status: string;
 };
@@ -212,18 +213,37 @@ function productSku(vendorProduct: VendorProduct, submission: ProductSubmission)
   return submission.sku?.trim() || `SINBAD-${vendorProduct.id.slice(0, 8).toUpperCase()}`;
 }
 
+function productBarcode(submission: ProductSubmission) {
+  const barcode = submission.barcode?.trim();
+  return barcode && /^(?:\d{8}|\d{12}|\d{13}|\d{14})$/.test(barcode) ? barcode : null;
+}
+
 function buildVariantUpdateInput(
   variantId: string,
   vendorProduct: VendorProduct,
   submission: ProductSubmission,
 ) {
-  return {
+  const input: {
+    id: string;
+    price: string;
+    barcode?: string;
+    inventoryItem: {
+      sku: string;
+    };
+  } = {
     id: variantId,
     price: String(submission.price),
     inventoryItem: {
       sku: productSku(vendorProduct, submission),
     },
   };
+
+  const barcode = productBarcode(submission);
+  if (barcode) {
+    input.barcode = barcode;
+  }
+
+  return input;
 }
 
 async function callShopifyGraphql(payload: Record<string, unknown>, accessToken: string) {
@@ -544,6 +564,7 @@ Deno.serve(async (req: Request) => {
             nodes {
               id
               sku
+              barcode
               price
               inventoryItem {
                 id
@@ -731,6 +752,7 @@ Deno.serve(async (req: Request) => {
         productVariants {
           id
           sku
+          barcode
           price
           inventoryItem {
             id
