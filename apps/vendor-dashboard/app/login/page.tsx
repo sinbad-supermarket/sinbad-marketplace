@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { PasswordInput } from "@/components/password-input";
 import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
@@ -45,15 +46,12 @@ export default function LoginPage() {
               onChange={(event) => setEmail(event.target.value)}
             />
           </label>
-          <label className="block">
-            <span className="text-sm font-semibold text-ink">Password</span>
-            <input
-              className="mt-2 h-10 w-full rounded-md border border-line px-3 text-sm outline-none focus:border-ink"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-          </label>
+          <PasswordInput
+            label="Password"
+            value={password}
+            onChange={setPassword}
+            autoComplete="current-password"
+          />
 
           <div className="text-right">
             <Link href="/forgot-password" className="text-sm font-semibold text-ink hover:underline">

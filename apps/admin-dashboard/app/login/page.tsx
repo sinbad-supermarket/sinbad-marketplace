@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { PasswordInput } from "@/components/password-input";
 import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
@@ -63,17 +64,12 @@ export default function LoginPage() {
             />
           </label>
 
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700">Password</span>
-            <input
-              className="mt-1 h-11 w-full rounded-md border border-line px-3 text-sm outline-none focus:border-ink"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="current-password"
-              required
-            />
-          </label>
+          <PasswordInput
+            label="Password"
+            value={password}
+            onChange={setPassword}
+            autoComplete="current-password"
+          />
 
           <div className="text-right">
             <Link href="/forgot-password" className="text-sm font-semibold text-ink hover:underline">

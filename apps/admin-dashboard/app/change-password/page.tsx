@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { AuthGate } from "@/components/auth-gate";
 import { AdminShell } from "@/components/admin-shell";
+import { PasswordInput } from "@/components/password-input";
 import { supabase } from "@/lib/supabase";
 
 function ChangePasswordForm() {
@@ -49,29 +50,19 @@ function ChangePasswordForm() {
       </p>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-        <label className="block">
-          <span className="text-sm font-medium text-slate-700">New password</span>
-          <input
-            className="mt-1 h-11 w-full rounded-md border border-line px-3 text-sm outline-none focus:border-ink"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="new-password"
-            required
-          />
-        </label>
+        <PasswordInput
+          label="New password"
+          value={password}
+          onChange={setPassword}
+          autoComplete="new-password"
+        />
 
-        <label className="block">
-          <span className="text-sm font-medium text-slate-700">Confirm password</span>
-          <input
-            className="mt-1 h-11 w-full rounded-md border border-line px-3 text-sm outline-none focus:border-ink"
-            type="password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            autoComplete="new-password"
-            required
-          />
-        </label>
+        <PasswordInput
+          label="Confirm password"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+          autoComplete="new-password"
+        />
 
         {message ? (
           <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
