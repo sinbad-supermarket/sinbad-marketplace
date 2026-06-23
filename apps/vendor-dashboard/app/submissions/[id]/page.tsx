@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, Pencil } from "lucide-react";
 import { VendorAuthGate } from "@/components/vendor-auth-gate";
 import type { VendorContext } from "@/components/vendor-auth-gate";
 import { VendorShell } from "@/components/vendor-shell";
@@ -264,6 +264,7 @@ function SubmissionDetail({ submissionId, vendor }: { submissionId: string; vend
     submission.status === "draft" ||
     submission.status === "rejected" ||
     submission.status === "changes_requested";
+  const canEdit = canSubmit;
   const imageUrls =
     uploadedImagePreviews.length > 0
       ? uploadedImagePreviews.map((image) => image.url).filter(Boolean)
@@ -296,14 +297,23 @@ function SubmissionDetail({ submissionId, vendor }: { submissionId: string; vend
           </p>
         </div>
 
-        {canSubmit ? (
-          <button
-            className="h-9 rounded-md bg-ink px-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
-            disabled={actionLoading}
-            onClick={handleSubmitForReview}
-          >
-            {actionLoading ? "Submitting..." : "Submit for Review"}
-          </button>
+        {canEdit ? (
+          <div className="flex flex-wrap gap-2">
+            <Link
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+              href={`/submissions/${submission.id}/edit`}
+            >
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+              Edit Submission
+            </Link>
+            <button
+              className="h-9 rounded-md bg-ink px-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+              disabled={actionLoading}
+              onClick={handleSubmitForReview}
+            >
+              {actionLoading ? "Submitting..." : "Submit for Review"}
+            </button>
+          </div>
         ) : null}
       </div>
 
