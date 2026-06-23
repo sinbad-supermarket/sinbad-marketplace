@@ -10,6 +10,7 @@ export default function UpdatePasswordPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [sessionReady, setSessionReady] = useState(false);
+  const [verifyingRecovery, setVerifyingRecovery] = useState(true);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -17,9 +18,38 @@ export default function UpdatePasswordPage() {
   useEffect(() => {
     let mounted = true;
 
-    void supabase.auth.getSession().then(({ data }) => {
-      if (mounted) setSessionReady(Boolean(data.session));
-    });
+    async function loadRecoverySession() {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tokenHash = searchParams.get("token_hash");
+      const type = searchParams.get("type");
+
+      if (tokenHash && type === "recovery") {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: "recovery"
+        });
+
+        if (!mounted) return;
+
+        if (verifyError) {
+          setError(verifyError.message);
+          setSessionReady(false);
+          setVerifyingRecovery(false);
+          return;
+        }
+
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+
+      const { data } = await supabase.auth.getSession();
+
+      if (mounted) {
+        setSessionReady(Boolean(data.session));
+        setVerifyingRecovery(false);
+      }
+    }
+
+    void loadRecoverySession();
 
     const {
       data: { subscription }
@@ -70,7 +100,13 @@ export default function UpdatePasswordPage() {
           Use the password reset link from your email, then set a new vendor password here.
         </p>
 
-        {!sessionReady ? (
+        {verifyingRecovery ? (
+          <div className="mt-6 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-800">
+            Verifying password reset link...
+          </div>
+        ) : null}
+
+        {!verifyingRecovery && !sessionReady ? (
           <div className="mt-6 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
             Reset session is not ready. Open the latest password reset email link, or request a new one.
           </div>
@@ -115,7 +151,7 @@ export default function UpdatePasswordPage() {
 
           <button
             className="h-10 w-full rounded-md bg-ink px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
-            disabled={loading || !sessionReady}
+            disabled={loading || verifyingRecovery || !sessionReady}
             type="submit"
           >
             {loading ? "Updating..." : "Update Password"}
