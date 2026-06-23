@@ -64,6 +64,12 @@ export function AdminShell({ user, adminRole, children }: AdminShellProps) {
               <div className="text-sm font-medium text-ink">{user.email}</div>
               <div className="text-xs capitalize text-slate-500">{adminRole}</div>
             </div>
+            <Link
+              href="/change-password"
+              className="hidden h-9 items-center rounded-md border border-line bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 sm:inline-flex"
+            >
+              Change Password
+            </Link>
             <button
               className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
               onClick={() => void supabase.auth.signOut()}

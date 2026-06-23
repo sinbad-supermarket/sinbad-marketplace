@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -73,6 +74,12 @@ export default function LoginPage() {
               required
             />
           </label>
+
+          <div className="text-right">
+            <Link href="/forgot-password" className="text-sm font-semibold text-ink hover:underline">
+              Forgot password?
+            </Link>
+          </div>
 
           {error ? (
             <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

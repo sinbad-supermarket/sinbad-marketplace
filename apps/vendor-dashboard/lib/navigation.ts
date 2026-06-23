@@ -18,6 +18,6 @@ export const navigationItems = [
   { label: "Commissions", href: "/commissions", icon: WalletCards, enabled: true },
   { label: "Live", href: "/dashboard/live", icon: Radio, enabled: false },
   { label: "Profile", href: "/dashboard/profile", icon: UserRound, enabled: false },
-  { label: "Settings", href: "/dashboard/settings", icon: Settings, enabled: false },
+  { label: "Settings", href: "/dashboard/settings", icon: Settings, enabled: true },
   { label: "Support", href: "/dashboard/support", icon: ReceiptText, enabled: false }
 ];
